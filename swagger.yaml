@@ -1,0 +1,450 @@
+openapi: 3.0.0
+info:
+  title: API SchoolManager - AuthService
+  description: |
+    Serviço de Autenticação.
+    Responsável por login, registro e controle de papéis (Administrador/Professor).
+  version: 1.0.0
+  contact:
+    name: Suporte SchoolManager
+    email: suporte@schoolmanager.com
+
+servers:
+  - url: http://localhost:3001
+    description: Servidor de Desenvolvimento
+
+# Componentes reutilizáveis
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    # Modelo de usuário (conforme schema do Prisma)
+    User:
+      type: object
+      properties:
+        user_id:
+          type: integer
+          example: 1
+        user_email:
+          type: string
+          example: "admin@escola.com"
+        user_status:
+          type: integer
+          description: "1 = ativo, 0 = inativo, 2 = deletado"
+          example: 1
+        role:
+          type: string
+          description: "Papel do usuário (ADMIN ou TEACHER)"
+          example: "ADMIN"
+      required:
+        - user_id
+        - user_email
+        - user_status
+
+    # Resposta de login
+    LoginResponse:
+      type: object
+      properties:
+        user:
+          $ref: '#/components/schemas/User'
+        token:
+          type: string
+          description: JWT token (Bearer)
+          example: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+
+    # Mensagem de erro padronizada
+    Error:
+      type: object
+      properties:
+        error:
+          type: string
+      required:
+        - error
+
+    # Lista de usuários paginada
+    UserListResponse:
+      type: object
+      properties:
+        users:
+          type: array
+          items:
+            $ref: '#/components/schemas/User'
+        total:
+          type: integer
+          example: 25
+        page:
+          type: integer
+          example: 1
+        limit:
+          type: integer
+          example: 10
+
+    # Corpo para criação/atualização de usuário
+    UserInput:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+          example: "professor@escola.com"
+        password:
+          type: string
+          format: password
+          minLength: 6
+          example: "123456"
+        status:
+          type: integer
+          enum: [0, 1, 2]
+          description: "1=ativo, 0=inativo, 2=deletado"
+          example: 1
+        role:
+          type: string
+          enum: [ADMIN, TEACHER]
+          description: "Papel do usuário (padrão TEACHER)"
+          example: "TEACHER"
+      required:
+        - email
+        - password
+
+    # Corpo para troca de senha
+    ChangePasswordInput:
+      type: object
+      properties:
+        oldPassword:
+          type: string
+          example: "123456"
+        newPassword:
+          type: string
+          minLength: 6
+          example: "novaSenha123"
+      required:
+        - oldPassword
+        - newPassword
+
+# Rotas/Endpoints
+paths:
+  # Health check
+  /api/v1/health:
+    get:
+      summary: Verifica saúde do serviço
+      tags:
+        - Health
+      responses:
+        '200':
+          description: Serviço operacional
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: "OK"
+                  service:
+                    type: string
+                    example: "auth-service"
+
+  # Autenticação (pública)
+  /api/v1/auth/login:
+    post:
+      summary: Login de usuário
+      tags:
+        - Authentication
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - email
+                - password
+              properties:
+                email:
+                  type: string
+                  format: email
+                  example: "admin@escola.com"
+                password:
+                  type: string
+                  example: "123456"
+      responses:
+        '200':
+          description: Login bem-sucedido
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LoginResponse'
+        '401':
+          description: E-mail ou senha inválidos
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Usuário inativo ou não encontrado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /api/v1/auth/register:
+    post:
+      summary: Auto-registro de novo usuário (papel TEACHER)
+      tags:
+        - Authentication
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - email
+                - password
+              properties:
+                email:
+                  type: string
+                  format: email
+                  example: "novo_professor@escola.com"
+                password:
+                  type: string
+                  minLength: 6
+                  example: "123456"
+      responses:
+        '201':
+          description: Usuário criado com sucesso
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  user:
+                    $ref: '#/components/schemas/User'
+        '400':
+          description: E-mail já cadastrado ou papel não encontrado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /api/v1/auth/verify:
+    get:
+      summary: Verifica validade do token JWT
+      tags:
+        - Authentication
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Token válido
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  valid:
+                    type: boolean
+                    example: true
+                  payload:
+                    type: object
+        '401':
+          description: Token não fornecido ou inválido
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  # Gestão de usuários (protegido, apenas ADMIN)
+  /api/v1/users/listUsers:
+    get:
+      summary: Lista usuários com paginação e filtros (apenas ADMIN)
+      tags:
+        - Users
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+          description: Número da página
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 10
+          description: Itens por página
+        - name: status
+          in: query
+          schema:
+            type: integer
+            enum: [0, 1, 2]
+          description: Filtro por status do usuário
+        - name: email
+          in: query
+          schema:
+            type: string
+          description: Filtro parcial por e-mail
+      responses:
+        '200':
+          description: Lista de usuários
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserListResponse'
+        '401':
+          description: Token inválido ou não fornecido
+        '403':
+          description: Acesso negado (requer papel ADMIN)
+
+  /api/v1/users/listUserById/{id}:
+    get:
+      summary: Busca usuário por ID (apenas ADMIN)
+      tags:
+        - Users
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: ID do usuário
+      responses:
+        '200':
+          description: Dados do usuário
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '404':
+          description: Usuário não encontrado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /api/v1/users/createUser:
+    post:
+      summary: Cria um novo usuário (apenas ADMIN)
+      tags:
+        - Users
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserInput'
+      responses:
+        '201':
+          description: Usuário criado com sucesso
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '400':
+          description: E-mail já existe ou dados inválidos
+        '403':
+          description: Acesso negado
+
+  /api/v1/users/updateUserById/{id}:
+    put:
+      summary: Atualiza dados do usuário (apenas ADMIN)
+      tags:
+        - Users
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                email:
+                  type: string
+                  format: email
+                status:
+                  type: integer
+                  enum: [0, 1, 2]
+      responses:
+        '200':
+          description: Usuário atualizado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '404':
+          description: Usuário não encontrado
+        '403':
+          description: Acesso negado
+
+  /api/v1/users/deleteUserById/{id}:
+    delete:
+      summary: Exclusão lógica do usuário (status = 2) - apenas ADMIN
+      tags:
+        - Users
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Usuário desativado com sucesso
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+        '404':
+          description: Usuário não encontrado
+        '403':
+          description: Acesso negado
+
+  /api/v1/users/changePassword:
+    post:
+      summary: Altera a própria senha (usuário autenticado)
+      tags:
+        - Users
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ChangePasswordInput'
+      responses:
+        '200':
+          description: Senha alterada com sucesso
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+        '401':
+          description: Senha atual inválida
+        '404':
+          description: Usuário não encontrado
