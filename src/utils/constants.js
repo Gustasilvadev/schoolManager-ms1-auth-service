@@ -3,6 +3,11 @@ module.exports = {
     ADMIN: 'Administrador',
     TEACHER: 'Professor'
   },
+  USER_STATUS: {
+    ACTIVE: 1,
+    INACTIVE: 0,
+    DELETED: 2
+  },
   HTTP_STATUS: {
     OK: 200,
     CREATED: 201,
@@ -17,6 +22,7 @@ module.exports = {
     TOKEN_MISSING: 'Token não fornecido',
     TOKEN_INVALID: 'Token inválido ou expirado',
     USER_NOT_FOUND: 'Usuário não encontrado',
-    EMAIL_ALREADY_EXISTS: 'E-mail já cadastrado'
+    EMAIL_ALREADY_EXISTS: 'E-mail já cadastrado',
+    FORBIDDEN: 'Acesso negado: permissão insuficiente'
   }
 };
