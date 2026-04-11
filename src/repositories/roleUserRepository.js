@@ -3,11 +3,21 @@ const prisma = require('../config/prisma');
 const findRolesByUserId = async (userId) => {
   const roleUsers = await prisma.role_users.findMany({
     where: { user_id: userId },
-    include: { role: true }
+    include: { role_id: true }
   });
   return roleUsers.map(ru => ru.role);
 };
 
-module.exports = { 
-  findRolesByUserId
+const assignRoleToUser = async (userId, roleId) => {
+  return await prisma.role_users.create({
+    data: {
+      user_id: userId,
+      role_id: roleId
+    }
+  });
+};
+
+module.exports = {
+  findRolesByUserId,
+  assignRoleToUser
 };
