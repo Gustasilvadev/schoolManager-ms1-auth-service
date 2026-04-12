@@ -37,3 +37,38 @@ Para mantermos o histórico limpo e rastreável, este projeto utiliza a especifi
 - `refactor`: Refatoração de código sem alterar regra de negócio.
 - `style`: Formatação de código (linting, prettier).
 - `test`: Criação/alteração de testes de segurança ou unitários.
+
+---
+
+# 📡 Endpoints da API
+
+## 🔑 Authentication
+
+| Método | Endpoint            | Descrição                      | Auth | Body |
+|--------|--------------------|-------------------------------|------|------|
+| POST   | `/auth/login`      | Realiza login do usuário      | ❌   | email, password |
+| POST   | `/auth/register`   | Registra usuário (TEACHER)    | ❌   | email, password |
+| GET    | `/auth/verify`     | Valida token JWT              | ✅   | — |
+
+---
+
+## 👥 Users (Auth)
+
+| Método | Endpoint                          | Descrição                          | Auth | Body |
+|--------|----------------------------------|------------------------------------|------|------|
+| GET    | `/users/listUsers`               | Lista usuários (com paginação)      | ✅   | — |
+| GET    | `/users/listUserById/{id}`       | Busca usuário por ID                | ✅   | — |
+| POST   | `/users/createUser`              | Cria novo usuário                  | ✅   | email, password, status, role |
+| PUT    | `/users/updateUserById/{id}`     | Atualiza usuário                   | ✅   | email, status |
+| DELETE | `/users/deleteUserById/{id}`     | Deleta usuário (lógico)            | ✅   | — |
+| POST   | `/users/changePassword`          | Altera senha do usuário            | ✅   | oldPassword, newPassword |
+
+---
+
+## ❤️ Health Check
+
+| Método | Endpoint   | Descrição                  | Auth |
+|--------|-----------|---------------------------|------|
+| GET    | `/health` | Verifica status da API     | ❌   |
+
+---
