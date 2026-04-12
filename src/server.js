@@ -16,7 +16,7 @@ const swaggerDocument = YAML.load('./swagger.yaml');
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 
 // Rotas da API
-app.use('/api/v1', routes);
+app.use('/', routes);
 
 // Middleware de erro
 app.use(errorHandler);
