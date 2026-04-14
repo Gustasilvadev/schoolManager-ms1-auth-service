@@ -19,13 +19,13 @@ model role_users {
 
 model roles {
   role_id    Int          @id @default(autoincrement())
-  role_name  String       @unique(map: "role_name") @db.VarChar(45)
+  role_name  String       @unique(map: "role_name_UNIQUE") @db.VarChar(45)
   role_users role_users[]
 }
 
 model users {
   user_id       Int          @id @default(autoincrement())
-  user_email    String       @unique(map: "user_email") @db.VarChar(45)
+  user_email    String       @unique(map: "user_email_UNIQUE") @db.VarChar(45)
   user_password String       @db.VarChar(255)
   user_status   Int
   role_users    role_users[]
