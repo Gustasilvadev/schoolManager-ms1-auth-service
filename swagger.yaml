@@ -191,46 +191,6 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error'
 
-  /auth/register:
-    post:
-      summary: Auto-registro de novo usuário (papel TEACHER)
-      tags:
-        - Authentication
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              required:
-                - email
-                - password
-              properties:
-                email:
-                  type: string
-                  format: email
-                  example: "novo_professor@escola.com"
-                password:
-                  type: string
-                  minLength: 6
-                  example: "123456"
-      responses:
-        '201':
-          description: Usuário criado com sucesso
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  user:
-                    $ref: '#/components/schemas/User'
-        '400':
-          description: E-mail já cadastrado ou papel não encontrado
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
-
   /auth/verify:
     get:
       summary: Verifica validade do token JWT
@@ -335,8 +295,6 @@ paths:
       summary: Cria um novo usuário (apenas ADMIN)
       tags:
         - Users
-      security:
-        - bearerAuth: []
       requestBody:
         required: true
         content:
