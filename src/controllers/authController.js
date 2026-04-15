@@ -19,23 +19,6 @@ const login = async (req, res, next) => {
 };
 
 
-const register = async (req, res, next) => {
-  try {
-    const { email, password, role } = req.body;
-    const result = await authService.register({ user_email: email, user_password: password }, role);
-    return res.status(HTTP_STATUS.CREATED).json(result);
-  } catch (error) {
-    if (error.message === MESSAGES.EMAIL_ALREADY_EXISTS) {
-      return res.status(HTTP_STATUS.BAD_REQUEST).json({ error: error.message });
-    }
-    if (error.message === MESSAGES.ROLE_NOT_FOUND) {
-      return res.status(HTTP_STATUS.BAD_REQUEST).json({ error: error.message });
-    }
-    next(error);
-  }
-};
-
-
 const verify = async (req, res, next) => {
   try {
     const authHeader = req.headers.authorization;
@@ -55,6 +38,5 @@ const verify = async (req, res, next) => {
 
 module.exports = { 
     login, 
-    register, 
     verify 
 };

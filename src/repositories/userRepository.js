@@ -20,7 +20,7 @@ const create = async (data) => {
     data: {
       user_email: data.user_email,
       user_password: data.user_password,
-      user_status: data.user_status !== undefined ? data.user_status : USER_STATUS.ACTIVE
+      user_status: data.user_status !== undefined ? data.user_status : USER_STATUS.ACTIVE,
     }
   });
 };

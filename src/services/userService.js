@@ -7,8 +7,9 @@ const { MESSAGES, ROLES, USER_STATUS, HTTP_STATUS } = require('../utils/constant
 
 const createUser = async (userData, roleName = ROLES.TEACHER) => {
   const existing = await userRepo.findByEmail(userData.user_email);
-  if (existing) throw new Error(MESSAGES.EMAIL_ALREADY_EXISTS);
-
+  if (existing) {
+    throw new Error(MESSAGES.EMAIL_ALREADY_EXISTS);
+  }
   const hashedPassword = hashPassword(userData.user_password);
   const newUser = await userRepo.create({
     user_email: userData.user_email,
@@ -17,9 +18,11 @@ const createUser = async (userData, roleName = ROLES.TEACHER) => {
   });
 
   const role = await roleRepo.findByName(roleName);
-  if (!role) throw new Error(MESSAGES.ROLE_NOT_FOUND);
-  await roleUserRepo.assignRoleToUser(newUser.user_id, role.role_id);
 
+  if (!role) {
+    throw new Error(MESSAGES.ROLE_NOT_FOUND);
+  }
+  await roleUserRepo.assignRoleToUser(newUser.user_id, role.role_id);
   return newUser;
 };
 

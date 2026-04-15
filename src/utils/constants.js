@@ -23,6 +23,7 @@ module.exports = {
     TOKEN_INVALID: 'Token inválido ou expirado',
     USER_NOT_FOUND: 'Usuário não encontrado',
     EMAIL_ALREADY_EXISTS: 'E-mail já cadastrado',
-    FORBIDDEN: 'Acesso negado: permissão insuficiente'
+    FORBIDDEN: 'Acesso negado: permissão insuficiente',
+    ROLE_NOT_FOUND: 'Papel (role) não encontrado'
   }
 };

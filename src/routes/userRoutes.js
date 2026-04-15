@@ -11,7 +11,7 @@ router.use(authMiddleware);
 // Rotas apenas para ADMIN
 router.get('/listUsers', roleMiddleware(['ADMIN']), userController.getAllUsers);
 router.get('/listUserById/:id', roleMiddleware(['ADMIN']), userController.getUserById);
-router.post('/createUser', roleMiddleware(['ADMIN']), validateCreateUser, userController.createUser);
+router.post('/createUser', validateCreateUser, userController.createUser);
 router.put('/updateUserById/:id', roleMiddleware(['ADMIN']), validateUpdateUser, userController.updateUser);
 router.delete('/deleteUserById/:id', roleMiddleware(['ADMIN']), userController.deleteUser);
 
