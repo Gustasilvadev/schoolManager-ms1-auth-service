@@ -1,6 +1,6 @@
 const userService = require('../services/userService');
 const { HTTP_STATUS, MESSAGES, USER_STATUS } = require('../utils/constants');
-
+const { formatUserResponse } = require('../utils/userFormatter');
 /**
  * Query: ?page=1&limit=10&status=1&email=...
  */
@@ -12,7 +12,8 @@ const getAllUsers = async (req, res, next) => {
     if (email) filters.user_email = { contains: email };
     
     const result = await userService.getAllUsers(filters, parseInt(page), parseInt(limit));
-    return res.status(HTTP_STATUS.OK).json(result);
+    const formattedUsers = result.users.map(formatUserResponse);
+    return res.status(HTTP_STATUS.OK).json(formattedUsers);
   } catch (error) {
     next(error);
   }
@@ -22,7 +23,7 @@ const getUserById = async (req, res, next) => {
   try {
     const { id } = req.params;
     const user = await userService.getUserById(parseInt(id));
-    return res.status(HTTP_STATUS.OK).json(user);
+    return res.status(HTTP_STATUS.OK).json(formatUserResponse(user));
   } catch (error) {
     if (error.message === MESSAGES.USER_NOT_FOUND) {
       return res.status(HTTP_STATUS.NOT_FOUND).json({ error: error.message });
