@@ -8,7 +8,15 @@ const findRolesByUserId = async (userId) => {
   return roleUsers.map(ru => ru.role);
 };
 
+const findOne = async (userId, roleId) => {
+  return await prisma.role_users.findFirst({
+    where: { user_id: userId, role_id: roleId }
+  });
+};
+
 const assignRoleToUser = async (userId, roleId) => {
+  const existing = await findOne(userId, roleId);
+  if (existing) return existing;
   return await prisma.role_users.create({
     data: {
       user_id: userId,

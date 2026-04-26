@@ -8,14 +8,16 @@ const { validateCreateUser, validateUpdateUser, validateChangePassword } = requi
 // Todas as rotas abaixo exigem autenticação
 router.use(authMiddleware);
 
-// Rotas apenas para ADMIN
-router.get('/listUsers', roleMiddleware(['ADMIN']), userController.getAllUsers);
-router.get('/listUserById/:id', roleMiddleware(['ADMIN']), userController.getUserById);
-router.post('/createUser', validateCreateUser, userController.createUser);
-router.put('/updateUserById/:id', roleMiddleware(['ADMIN']), validateUpdateUser, userController.updateUser);
-router.delete('/deleteUserById/:id', roleMiddleware(['ADMIN']), userController.deleteUser);
-
 // Rota para qualquer usuário autenticado alterar sua própria senha
 router.post('/changePassword', validateChangePassword, userController.changePassword);
+
+// A partir daqui, apenas ADMIN
+router.use(roleMiddleware(['ADMIN']));
+
+router.get('/listUsers', userController.getAllUsers);
+router.get('/listUserById/:id', userController.getUserById);
+router.post('/createUser', validateCreateUser, userController.createUser);
+router.put('/updateUserById/:id', validateUpdateUser, userController.updateUser);
+router.delete('/deleteUserById/:id', userController.deleteUser);
 
 module.exports = router;

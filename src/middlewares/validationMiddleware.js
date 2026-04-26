@@ -19,10 +19,10 @@ const validateLogin = [
   validate
 ];
 
-// Validação para registro público
+// Validação para registro público (cria usuário com role TEACHER)
 const validateRegister = [
-  body('email').isEmail().withMessage('E-mail inválido'),
-  body('password').isLength({ min: 6 }).withMessage('Senha deve ter no mínimo 6 caracteres'),
+  body('user_email').isEmail().withMessage('E-mail inválido'),
+  body('user_password').isLength({ min: 6 }).withMessage('Senha deve ter no mínimo 6 caracteres'),
   validate
 ];
 
@@ -51,7 +51,6 @@ const validateChangePassword = [
 
 module.exports = {
   validateLogin,
-  validateRegister,
   validateCreateUser,
   validateUpdateUser,
   validateChangePassword

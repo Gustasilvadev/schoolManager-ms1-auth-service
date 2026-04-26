@@ -1,4 +1,3 @@
-const prisma = require('../config/prisma');
 const userRepo = require('../repositories/userRepository');
 const roleRepo = require('../repositories/roleRepository');
 const roleUserRepo = require('../repositories/roleUserRepository');
@@ -32,18 +31,8 @@ const getAllUsers = async (filters = {}, page = 1, limit = 10) => {
   if (filters.user_status !== undefined) where.user_status = filters.user_status;
   if (filters.user_email) where.user_email = { contains: filters.user_email };
 
-  const users = await prisma.users.findMany({
-    where,
-    skip,
-    take: limit,
-    include: {
-      role_users: {
-        include: { roles: true }
-      }
-    }
-  });
-
-  const total = await prisma.users.count({ where });
+  const users = await userRepo.findAll(skip, limit, where);
+  const total = await userRepo.count(where);
   return { users, total, page, limit };
 };
 
