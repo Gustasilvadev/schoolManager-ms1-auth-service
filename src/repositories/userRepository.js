@@ -15,6 +15,24 @@ const findById = async (id) => {
   });
 };
 
+const findAll = async (skip, take, where = {}) => {
+  return await prisma.users.findMany({
+    where,
+    skip,
+    take,
+    orderBy: { user_id: 'asc' },
+    include: {
+      role_users: {
+        include: { roles: true }
+      }
+    }
+  });
+};
+
+const count = async (where = {}) => {
+  return await prisma.users.count({ where });
+};
+
 const create = async (data) => {
   return await prisma.users.create({
     data: {
@@ -43,10 +61,12 @@ const softDelete = async (id) => {
   });
 };
 
-module.exports = { 
-    findByEmail, 
-    findById, 
-    create, 
-    update, 
+module.exports = {
+    findByEmail,
+    findById,
+    findAll,
+    count,
+    create,
+    update,
     softDelete
 };
