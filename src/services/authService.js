@@ -32,7 +32,6 @@ const fetchTeacherIdByUserId = async (userId) => {
  * Realiza login do usuário, verificando email e senha, e retorna um token JWT se for bem-sucedido.
  */
 const login = async (email, password) => {
-  // Usa o findByEmail original (que já inclui user_password e role_users)
   const user = await userRepo.findByEmail(email);
 
   if (!user || !comparePassword(password, user.user_password)) {
@@ -42,7 +41,6 @@ const login = async (email, password) => {
     throw new Error(MESSAGES.USER_NOT_FOUND);
   }
 
-  // Extrai o nome do papel (primeiro papel associado)
   const roleName = user.role_users?.[0]?.roles?.role_name || null;
   const payload = { id: user.user_id, email: user.user_email, role: roleName };
   if (roleName === ROLES.TEACHER) {

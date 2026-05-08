@@ -5,13 +5,10 @@ const authMiddleware = require('../middlewares/authMiddleware');
 const roleMiddleware = require('../middlewares/roleMiddleware');
 const { validateCreateUser, validateUpdateUser, validateChangePassword } = require('../middlewares/validationMiddleware');
 
-// Todas as rotas abaixo exigem autenticação
 router.use(authMiddleware);
 
-// Rota para qualquer usuário autenticado alterar sua própria senha
 router.post('/changePassword', validateChangePassword, userController.changePassword);
 
-// A partir daqui, apenas ADMIN
 router.use(roleMiddleware(['ADMIN']));
 
 router.get('/listUsers', userController.getAllUsers);
