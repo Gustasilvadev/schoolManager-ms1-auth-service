@@ -12,37 +12,34 @@ const validate = (req, res, next) => {
   next();
 };
 
-// Validação para login
 const validateLogin = [
   body('email').isEmail().withMessage('E-mail inválido'),
   body('password').notEmpty().withMessage('Senha é obrigatória'),
   validate
 ];
 
-// Validação para registro público (cria usuário com role TEACHER)
 const validateRegister = [
   body('user_email').isEmail().withMessage('E-mail inválido'),
   body('user_password').isLength({ min: 6 }).withMessage('Senha deve ter no mínimo 6 caracteres'),
   validate
 ];
 
-// Validação para criação de usuário (admin)
 const validateCreateUser = [
   body('email').isEmail().withMessage('E-mail inválido'),
   body('password').isLength({ min: 6 }).withMessage('Senha deve ter no mínimo 6 caracteres'),
   body('status').optional().isInt({ min: 0, max: 2 }).withMessage('Status deve ser 0, 1 ou 2'),
   body('role').optional().isIn(['ADMIN', 'TEACHER']).withMessage('Role deve ser ADMIN ou TEACHER'),
+  body('teacher_name').optional().isString().trim(),
+  body('teacher_cpf').optional().isString().trim(),
   validate
 ];
 
-// Validação para atualização de usuário
 const validateUpdateUser = [
   body('email').optional().isEmail().withMessage('E-mail inválido'),
   body('status').optional().isInt({ min: 0, max: 2 }).withMessage('Status deve ser 0, 1 ou 2'),
   validate
 ];
 
-// Validação para troca de senha
 const validateChangePassword = [
   body('oldPassword').notEmpty().withMessage('Senha atual é obrigatória'),
   body('newPassword').isLength({ min: 6 }).withMessage('Nova senha deve ter no mínimo 6 caracteres'),

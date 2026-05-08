@@ -1,9 +1,6 @@
 const userService = require('../services/userService');
 const { HTTP_STATUS, MESSAGES, USER_STATUS } = require('../utils/constants');
 const { formatUserResponse } = require('../utils/userFormatter');
-/**
- * Query: ?page=1&limit=10&status=1&email=...
- */
 const getAllUsers = async (req, res, next) => {
   try {
     const { page = 1, limit = 10, status, email } = req.query;
@@ -34,16 +31,26 @@ const getUserById = async (req, res, next) => {
 
 const createUser = async (req, res, next) => {
   try {
-    const { email, password, status, role } = req.body;
-    const userData = { user_email: email, user_password: password, user_status: status };
+    const { email, password, status, role, teacher_name, teacher_cpf } = req.body;
+    const userData = {
+      user_email: email,
+      user_password: password,
+      user_status: status,
+      teacher_name,
+      teacher_cpf
+    };
     const newUser = await userService.createUser(userData, role);
-    return res.status(HTTP_STATUS.CREATED).json(newUser);
+    return res.status(HTTP_STATUS.CREATED).json(formatUserResponse(newUser));
   } catch (error) {
-    if (error.message === MESSAGES.EMAIL_ALREADY_EXISTS) {
+    if (
+      error.message === MESSAGES.EMAIL_ALREADY_EXISTS ||
+      error.message === MESSAGES.CPF_ALREADY_EXISTS ||
+      error.message === MESSAGES.ROLE_NOT_FOUND
+    ) {
       return res.status(HTTP_STATUS.BAD_REQUEST).json({ error: error.message });
     }
-    if (error.message === MESSAGES.ROLE_NOT_FOUND) {
-      return res.status(HTTP_STATUS.BAD_REQUEST).json({ error: error.message });
+    if (error.message === MESSAGES.EXTERNAL_SERVICE_UNAVAILABLE) {
+      return res.status(HTTP_STATUS.SERVICE_UNAVAILABLE).json({ error: error.message });
     }
     next(error);
   }
@@ -59,7 +66,7 @@ const updateUser = async (req, res, next) => {
     if (status !== undefined) updateData.user_status = status;
     
     const updated = await userService.updateUser(parseInt(id), updateData);
-    return res.status(HTTP_STATUS.OK).json(updated);
+    return res.status(HTTP_STATUS.OK).json(formatUserResponse(updated));
   } catch (error) {
     if (error.message === MESSAGES.USER_NOT_FOUND) {
       return res.status(HTTP_STATUS.NOT_FOUND).json({ error: error.message });
@@ -81,9 +88,6 @@ const deleteUser = async (req, res, next) => {
   }
 };
 
-/**
- * Autenticado (qualquer usuário pode alterar sua própria senha)
- */
 const changePassword = async (req, res, next) => {
   try {
     const userId = req.user.id;

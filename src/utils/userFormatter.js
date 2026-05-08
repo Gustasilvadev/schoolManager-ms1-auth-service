@@ -1,15 +1,13 @@
 /**
- * Formata o objeto de usuário retornado pelo banco para o contrato da API.
+ * Formata o usuário do banco removendo a senha e expondo apenas o nome do papel.
  */
 const formatUserResponse = (user) => {
   const { user_password, role_users, ...userData } = user;
-  const roles = role_users 
-    ? role_users.map(ru => ru.roles) 
-    : [];
+  const role = role_users?.[0]?.roles?.role_name ?? null;
 
   return {
     ...userData,
-    roles
+    role
   };
 };
 

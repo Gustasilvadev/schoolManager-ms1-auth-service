@@ -33,8 +33,8 @@ const count = async (where = {}) => {
   return await prisma.users.count({ where });
 };
 
-const create = async (data) => {
-  return await prisma.users.create({
+const create = async (data, tx = prisma) => {
+  return await tx.users.create({
     data: {
       user_email: data.user_email,
       user_password: data.user_password,
