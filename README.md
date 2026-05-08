@@ -58,7 +58,7 @@ Para mantermos o histórico limpo e rastreável, este projeto utiliza a especifi
 |--------|----------------------------------|------------------------------------|------|------|
 | GET    | `/users/listUsers`               | Lista usuários (com paginação)      | ✅   | — |
 | GET    | `/users/listUserById/{id}`       | Busca usuário por ID                | ✅   | — |
-| POST   | `/users/createUser`              | Cria novo usuário                  | ✅   | email, password, status, role |
+| POST   | `/users/createUser`              | Cria novo usuário                  | ✅   | email, password, status, role, teacher_name?, teacher_cpf? |
 | PUT    | `/users/updateUserById/{id}`     | Atualiza usuário                   | ✅   | email, status |
 | DELETE | `/users/deleteUserById/{id}`     | Deleta usuário (lógico)            | ✅   | — |
 | POST   | `/users/changePassword`          | Altera senha do usuário            | ✅   | oldPassword, newPassword |
@@ -71,4 +71,23 @@ Para mantermos o histórico limpo e rastreável, este projeto utiliza a especifi
 |--------|-----------|---------------------------|------|
 | GET    | `/health` | Verifica status da API     | ❌   |
 
+---
+
+## 📨 Eventos RabbitMQ (Publisher)
+
+| Evento        | Routing Key      | Quando é publicado                          | Payload (campos principais)                          | Consumidor |
+|---------------|------------------|--------------------------------------------|------------------------------------------------------|------------|
+| `UserCreated` | `user.created`   | Após `POST /users/createUser`              | `user_id`, `user_email`, `role`, `teacher_name`, `teacher_cpf` | MS3        |
+| `UserDeleted` | `user.deleted`   | Após `DELETE /users/deleteUserById/{id}`   | `user_id`                                            | MS3        |
+
+**Fluxo automático de criação de professor:**
+Quando `teacher_name` e `teacher_cpf` são enviados em `/users/createUser`:
+
+1. **Validação prévia (síncrona via HTTP)** — antes de gravar no banco do MS1, são feitas duas chamadas a endpoints internos do MS3:
+   - `GET /api/teachers/byCpf/{cpf}` — se retornar 200, MS1 responde **400 CPF_ALREADY_EXISTS** sem criar o user
+   - `GET /api/teachers/byEmail/{email}` — se retornar 200, MS1 responde **400 EMAIL_ALREADY_EXISTS**
+   - Se MS3 indisponível/timeout, MS1 responde **503**
+2. **Criação do user** no banco do MS1 dentro de `prisma.$transaction` (user + role_user atômicos)
+3. **Publish do evento** `UserCreated` no RabbitMQ
+4. **Consumer do MS3** cria o registro de professor vinculado ao `user_id`
 ---

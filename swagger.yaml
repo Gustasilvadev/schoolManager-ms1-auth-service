@@ -10,8 +10,10 @@ info:
     email: suporte@schoolmanager.com
 
 servers:
+  - url: http://localhost:3000/api
+    description: Via API Gateway (recomendado — valida JWT, CORS, rate limit)
   - url: http://localhost:3001/api
-    description: Servidor de Desenvolvimento
+    description: Direto no MS1 (somente desenvolvimento)
 
 # Componentes reutilizáveis
 components:
@@ -22,7 +24,7 @@ components:
       bearerFormat: JWT
 
   schemas:
-    # Modelo de usuário (conforme schema do Prisma)
+    # Modelo de usuário
     User:
       type: object
       properties:
@@ -38,7 +40,9 @@ components:
           example: 1
         role:
           type: string
-          description: "Papel do usuário (ADMIN ou TEACHER)"
+          enum: [ADMIN, TEACHER]
+          nullable: true
+          description: "Papel do usuário (nome do role). Null se não houver papel atribuído."
           example: "ADMIN"
       required:
         - user_id
@@ -106,6 +110,14 @@ components:
           enum: [ADMIN, TEACHER]
           description: "Papel do usuário (padrão TEACHER)"
           example: "TEACHER"
+        teacher_name:
+          type: string
+          description: "Nome do professor (qualquer role). Propagado via evento RabbitMQ UserCreated para o MS3 criar o registro de professor. Não persiste no MS1."
+          example: "Maria Silva"
+        teacher_cpf:
+          type: string
+          description: "CPF do professor (qualquer role). Propagado via evento RabbitMQ UserCreated para o MS3 criar o registro de professor. Não persiste no MS1."
+          example: "12345678900"
       required:
         - email
         - password
@@ -293,8 +305,16 @@ paths:
   /users/createUser:
     post:
       summary: Cria um novo usuário (apenas ADMIN)
+      description: |
+        Cria um usuário no MS1. Após o commit no banco, publica o evento
+        `UserCreated` no RabbitMQ (exchange `school_manager`, routing key `user.created`).
+
+        O response NÃO inclui a senha do usuário. Falha de publish é registrada em log
+        mas não reverte a criação do usuário.
       tags:
         - Users
+      security:
+        - bearerAuth: []
       requestBody:
         required: true
         content:
@@ -309,9 +329,16 @@ paths:
               schema:
                 $ref: '#/components/schemas/User'
         '400':
-          description: E-mail já existe ou dados inválidos
+          description: |
+            E-mail ou CPF já existe (no MS1 ou no MS3), role inválido, ou dados malformados.
+        '401':
+          description: Token não fornecido ou inválido
         '403':
           description: Acesso negado
+        '503':
+          description: |
+            MS3 (TeacherService) indisponível ou timeout durante a validação prévia
+            (apenas quando `teacher_name` + `teacher_cpf` foram enviados).
 
   /users/updateUserById/{id}:
     put:
@@ -354,6 +381,10 @@ paths:
   /users/deleteUserById/{id}:
     delete:
       summary: Exclusão lógica do usuário (status = 2) - apenas ADMIN
+      description: |
+        Soft-delete do usuário. Após o commit, publica o evento `UserDeleted`
+        no RabbitMQ (routing key `user.deleted`). O consumer do MS3 propaga a
+        inativação do professor vinculado (`teacher_status = 2`).
       tags:
         - Users
       security:
