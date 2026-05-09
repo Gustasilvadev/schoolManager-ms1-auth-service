@@ -83,11 +83,13 @@ Para mantermos o histórico limpo e rastreável, este projeto utiliza a especifi
 **Fluxo automático de criação de professor:**
 Quando `teacher_name` e `teacher_cpf` são enviados em `/users/createUser`:
 
-1. **Validação prévia (síncrona via HTTP)** — antes de gravar no banco do MS1, são feitas duas chamadas a endpoints internos do MS3:
+1. **Validação prévia (síncrona via HTTP, com Token Propagation)** — antes de gravar no banco do MS1, são feitas duas chamadas a endpoints do MS3 propagando o `Authorization` do ADMIN que originou a requisição:
    - `GET /api/teachers/byCpf/{cpf}` — se retornar 200, MS1 responde **400 CPF_ALREADY_EXISTS** sem criar o user
    - `GET /api/teachers/byEmail/{email}` — se retornar 200, MS1 responde **400 EMAIL_ALREADY_EXISTS**
    - Se MS3 indisponível/timeout, MS1 responde **503**
 2. **Criação do user** no banco do MS1 dentro de `prisma.$transaction` (user + role_user atômicos)
 3. **Publish do evento** `UserCreated` no RabbitMQ
 4. **Consumer do MS3** cria o registro de professor vinculado ao `user_id`
+
+> **Token Propagation:** o MS1 reaproveita o JWT do ADMIN nas chamadas a `byCpf`/`byEmail` (que agora exigem auth no MS3). A única exceção é `GET /api/teachers/byUser/{userId}`, chamada durante o **login** — nesse momento o token ainda não foi emitido, por isso o endpoint segue interno sem JWT, e o **API Gateway bloqueia o acesso externo** a essa rota via `internalRouteBlocker`.
 ---
