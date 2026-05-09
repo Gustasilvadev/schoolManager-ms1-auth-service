@@ -7,14 +7,15 @@ const { validateCreateUser, validateUpdateUser, validateChangePassword } = requi
 
 router.use(authMiddleware);
 
-router.post('/changePassword', validateChangePassword, userController.changePassword);
+const ADMIN_ONLY = roleMiddleware(['ADMIN']);
+const ADMIN_OR_TEACHER = roleMiddleware(['ADMIN', 'TEACHER']);
 
-router.use(roleMiddleware(['ADMIN']));
+router.post('/changePassword', ADMIN_OR_TEACHER, validateChangePassword, userController.changePassword);
 
-router.get('/listUsers', userController.getAllUsers);
-router.get('/listUserById/:id', userController.getUserById);
-router.post('/createUser', validateCreateUser, userController.createUser);
-router.put('/updateUserById/:id', validateUpdateUser, userController.updateUser);
-router.delete('/deleteUserById/:id', userController.deleteUser);
+router.get('/listUsers', ADMIN_ONLY, userController.getAllUsers);
+router.get('/listUserById/:id', ADMIN_ONLY, userController.getUserById);
+router.post('/createUser', ADMIN_ONLY, validateCreateUser, userController.createUser);
+router.put('/updateUserById/:id', ADMIN_ONLY, validateUpdateUser, userController.updateUser);
+router.delete('/deleteUserById/:id', ADMIN_ONLY, userController.deleteUser);
 
 module.exports = router;
