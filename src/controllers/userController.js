@@ -6,7 +6,7 @@ const getAllUsers = async (req, res, next) => {
     const { page = 1, limit = 10, status, email } = req.query;
     const filters = {};
     if (status !== undefined) filters.user_status = parseInt(status);
-    if (email) filters.user_email = { contains: email };
+    if (email) filters.user_email = email;
     
     const result = await userService.getAllUsers(filters, parseInt(page), parseInt(limit));
     const formattedUsers = result.users.map(formatUserResponse);
@@ -39,7 +39,7 @@ const createUser = async (req, res, next) => {
       teacher_name,
       teacher_cpf
     };
-    const newUser = await userService.createUser(userData, role);
+    const newUser = await userService.createUser(userData, role, req.headers.authorization);
     return res.status(HTTP_STATUS.CREATED).json(formatUserResponse(newUser));
   } catch (error) {
     if (
