@@ -10,12 +10,16 @@ const buildUrl = (path) => {
   return `${base.replace(/\/$/, '')}${path}`;
 };
 
-const fetchWithTimeout = async (url) => {
+const fetchWithTimeout = async (url, authToken) => {
   const timeoutMs = parseInt(process.env.TEACHER_SERVICE_TIMEOUT_MS, 10) || 3000;
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), timeoutMs);
   try {
-    return await fetch(url, { method: 'GET', signal: controller.signal });
+    return await fetch(url, {
+      method: 'GET',
+      signal: controller.signal,
+      headers: authToken ? { Authorization: authToken } : {}
+    });
   } finally {
     clearTimeout(timer);
   }
@@ -24,11 +28,11 @@ const fetchWithTimeout = async (url) => {
 /**
  * Consulta o MS3 buscando um professor pelo CPF.
  */
-const findTeacherByCpf = async (cpf) => {
+const findTeacherByCpf = async (cpf, authToken) => {
   const url = buildUrl(`/teachers/byCpf/${encodeURIComponent(cpf)}`);
   let response;
   try {
-    response = await fetchWithTimeout(url);
+    response = await fetchWithTimeout(url, authToken);
   } catch (err) {
     console.error(`[MS1->${SERVICE_NAME}] Falha ao consultar byCpf:`, err.message);
     throw new Error(MESSAGES.EXTERNAL_SERVICE_UNAVAILABLE);
@@ -45,11 +49,11 @@ const findTeacherByCpf = async (cpf) => {
 /**
  * Consulta o MS3 buscando um professor pelo e-mail.
  */
-const findTeacherByEmail = async (email) => {
+const findTeacherByEmail = async (email, authToken) => {
   const url = buildUrl(`/teachers/byEmail/${encodeURIComponent(email)}`);
   let response;
   try {
-    response = await fetchWithTimeout(url);
+    response = await fetchWithTimeout(url, authToken);
   } catch (err) {
     console.error(`[MS1->${SERVICE_NAME}] Falha ao consultar byEmail:`, err.message);
     throw new Error(MESSAGES.EXTERNAL_SERVICE_UNAVAILABLE);
@@ -63,4 +67,25 @@ const findTeacherByEmail = async (email) => {
   return await response.json();
 };
 
-module.exports = { findTeacherByCpf, findTeacherByEmail };
+/**
+ * Consulta o MS3 buscando o teacher_id pelo user_id.
+ * Sem authToken porque é chamado durante o login (token ainda não foi gerado).
+ * O endpoint /teachers/byUser/:userId é interno — o API Gateway DEVE bloquear acesso externo.
+ */
+const findTeacherIdByUserId = async (userId) => {
+  const url = buildUrl(`/teachers/byUser/${encodeURIComponent(userId)}`);
+  let response;
+  try {
+    response = await fetchWithTimeout(url);
+  } catch (err) {
+    console.error(`[MS1->${SERVICE_NAME}] Falha ao consultar byUser:`, err.message);
+    return null;
+  }
+
+  if (response.status === 404) return null;
+  if (!response.ok) return null;
+  const data = await response.json();
+  return data?.teacher_id ?? null;
+};
+
+module.exports = { findTeacherByCpf, findTeacherByEmail, findTeacherIdByUserId };

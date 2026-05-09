@@ -4,29 +4,8 @@ const roleRepo = require('../repositories/roleRepository');
 const roleUserRepo = require('../repositories/roleUserRepository');
 const { comparePassword, hashPassword } = require('../utils/passwordHelper');
 const { generateAccessToken, verifyToken } = require('../utils/jwtHelper');
+const { findTeacherIdByUserId } = require('../utils/teachersClient');
 const { MESSAGES, ROLES, USER_STATUS } = require('../utils/constants');
-
-const fetchTeacherIdByUserId = async (userId) => {
-  const baseUrl = process.env.TEACHER_SERVICE_URL;
-  if (!baseUrl) return null;
-
-  const timeoutMs = parseInt(process.env.TEACHER_SERVICE_TIMEOUT_MS, 10);
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), timeoutMs);
-  try {
-    const response = await fetch(`${baseUrl}/teachers/byUser/${userId}`, {
-      method: 'GET',
-      signal: controller.signal
-    });
-    if (!response.ok) return null;
-    const data = await response.json();
-    return data?.teacher_id ?? null;
-  } catch (err) {
-    return null;
-  } finally {
-    clearTimeout(timer);
-  }
-};
 
 /**
  * Realiza login do usuário, verificando email e senha, e retorna um token JWT se for bem-sucedido.
@@ -44,7 +23,7 @@ const login = async (email, password) => {
   const roleName = user.role_users?.[0]?.roles?.role_name || null;
   const payload = { id: user.user_id, email: user.user_email, role: roleName };
   if (roleName === ROLES.TEACHER) {
-    const teacherId = await fetchTeacherIdByUserId(user.user_id);
+    const teacherId = await findTeacherIdByUserId(user.user_id);
     if (teacherId) payload.teacher_id = teacherId;
   }
   const token = generateAccessToken(payload);

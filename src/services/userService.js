@@ -7,7 +7,7 @@ const { MESSAGES, ROLES, USER_STATUS, HTTP_STATUS } = require('../utils/constant
 const { emitUserCreated, emitUserDeleted } = require('../events/publishers/userPublisher');
 const { findTeacherByCpf, findTeacherByEmail } = require('../utils/teachersClient');
 
-const createUser = async (userData, roleName = ROLES.TEACHER) => {
+const createUser = async (userData, roleName = ROLES.TEACHER, authToken = null) => {
   const existing = await userRepo.findByEmail(userData.user_email);
   if (existing) {
     throw new Error(MESSAGES.EMAIL_ALREADY_EXISTS);
@@ -18,10 +18,10 @@ const createUser = async (userData, roleName = ROLES.TEACHER) => {
     throw new Error(MESSAGES.ROLE_NOT_FOUND);
   }
   if (userData.teacher_name && userData.teacher_cpf) {
-    const cpfTaken = await findTeacherByCpf(userData.teacher_cpf);
+    const cpfTaken = await findTeacherByCpf(userData.teacher_cpf, authToken);
     if (cpfTaken) throw new Error(MESSAGES.CPF_ALREADY_EXISTS);
 
-    const emailTaken = await findTeacherByEmail(userData.user_email);
+    const emailTaken = await findTeacherByEmail(userData.user_email, authToken);
     if (emailTaken) throw new Error(MESSAGES.EMAIL_ALREADY_EXISTS);
   }
 
