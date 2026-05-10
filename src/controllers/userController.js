@@ -3,12 +3,13 @@ const { HTTP_STATUS, MESSAGES, USER_STATUS } = require('../utils/constants');
 const { formatUserResponse } = require('../utils/userFormatter');
 const getAllUsers = async (req, res, next) => {
   try {
-    const { page = 1, limit = 10, status, email } = req.query;
+    const { page = 1, limit = 10, status, email, includeDeleted } = req.query;
     const filters = {};
     if (status !== undefined) filters.user_status = parseInt(status);
     if (email) filters.user_email = email;
-    
-    const result = await userService.getAllUsers(filters, parseInt(page), parseInt(limit));
+    if (includeDeleted === 'true') filters.includeDeleted = true;
+
+    const result = await userService.getAllUsers(filters, parseInt(page), parseInt(limit), req.user.role);
     const formattedUsers = result.users.map(formatUserResponse);
     return res.status(HTTP_STATUS.OK).json(formattedUsers);
   } catch (error) {
@@ -64,12 +65,34 @@ const updateUser = async (req, res, next) => {
     const updateData = {};
     if (email !== undefined) updateData.user_email = email;
     if (status !== undefined) updateData.user_status = status;
-    
+
     const updated = await userService.updateUser(parseInt(id), updateData);
     return res.status(HTTP_STATUS.OK).json(formatUserResponse(updated));
   } catch (error) {
     if (error.message === MESSAGES.USER_NOT_FOUND) {
       return res.status(HTTP_STATUS.NOT_FOUND).json({ error: error.message });
+    }
+    if (error.message === MESSAGES.CANNOT_EDIT_DELETED) {
+      return res.status(HTTP_STATUS.BAD_REQUEST).json({ error: error.message });
+    }
+    next(error);
+  }
+};
+
+const restoreUser = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const restored = await userService.restoreUser(parseInt(id));
+    return res.status(HTTP_STATUS.OK).json({
+      message: MESSAGES.USER_RESTORED,
+      user: formatUserResponse(restored)
+    });
+  } catch (error) {
+    if (error.message === MESSAGES.USER_NOT_FOUND) {
+      return res.status(HTTP_STATUS.NOT_FOUND).json({ error: error.message });
+    }
+    if (error.message === MESSAGES.NOT_DELETED_CANNOT_RESTORE) {
+      return res.status(HTTP_STATUS.BAD_REQUEST).json({ error: error.message });
     }
     next(error);
   }
@@ -108,5 +131,6 @@ module.exports = {
   createUser,
   updateUser,
   deleteUser,
+  restoreUser,
   changePassword
 };

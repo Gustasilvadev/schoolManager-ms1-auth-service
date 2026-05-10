@@ -27,6 +27,9 @@ module.exports = {
     CPF_ALREADY_EXISTS: 'CPF já cadastrado',
     FORBIDDEN: 'Acesso negado: permissão insuficiente',
     ROLE_NOT_FOUND: 'Papel (role) não encontrado',
-    EXTERNAL_SERVICE_UNAVAILABLE: 'Serviço externo indisponível'
+    EXTERNAL_SERVICE_UNAVAILABLE: 'Serviço externo indisponível',
+    CANNOT_EDIT_DELETED: 'Não é possível editar um usuário excluído',
+    NOT_DELETED_CANNOT_RESTORE: 'O registro não está excluído',
+    USER_RESTORED: 'Usuário restaurado com sucesso'
   }
 };

@@ -61,6 +61,13 @@ const softDelete = async (id) => {
   });
 };
 
+const restore = async (id) => {
+  return await prisma.users.update({
+    where: { user_id: id },
+    data: { user_status: USER_STATUS.ACTIVE }
+  });
+};
+
 module.exports = {
     findByEmail,
     findById,
@@ -68,5 +75,6 @@ module.exports = {
     count,
     create,
     update,
-    softDelete
+    softDelete,
+    restore
 };

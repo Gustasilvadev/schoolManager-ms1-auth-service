@@ -17,5 +17,6 @@ router.get('/listUserById/:id', ADMIN_ONLY, userController.getUserById);
 router.post('/createUser', ADMIN_ONLY, validateCreateUser, userController.createUser);
 router.put('/updateUserById/:id', ADMIN_ONLY, validateUpdateUser, userController.updateUser);
 router.delete('/deleteUserById/:id', ADMIN_ONLY, userController.deleteUser);
+router.post('/restoreUserById/:id', ADMIN_ONLY, userController.restoreUser);
 
 module.exports = router;

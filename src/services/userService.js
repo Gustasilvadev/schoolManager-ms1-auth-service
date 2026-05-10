@@ -52,10 +52,18 @@ const createUser = async (userData, roleName = ROLES.TEACHER, authToken = null) 
   return await userRepo.findById(newUser.user_id);
 };
 
-const getAllUsers = async (filters = {}, page = 1, limit = 10) => {
+const getAllUsers = async (filters = {}, page = 1, limit = 10, userRole = ROLES.ADMIN) => {
   const skip = (page - 1) * limit;
   const where = {};
-  if (filters.user_status !== undefined) where.user_status = filters.user_status;
+
+  if (userRole === ROLES.TEACHER) {
+    where.user_status = USER_STATUS.ACTIVE;
+  } else if (filters.user_status !== undefined) {
+    where.user_status = filters.user_status;
+  } else if (filters.includeDeleted !== true) {
+    where.user_status = { in: [USER_STATUS.ACTIVE, USER_STATUS.INACTIVE] };
+  }
+
   if (filters.user_email) where.user_email = { contains: filters.user_email };
 
   const users = await userRepo.findAll(skip, limit, where);
@@ -70,9 +78,13 @@ const getUserById = async (id) => {
 };
 
 const updateUser = async (id, updateData) => {
+  const existing = await userRepo.findById(id);
+  if (!existing) throw new Error(MESSAGES.USER_NOT_FOUND);
+  if (existing.user_status === USER_STATUS.DELETED) {
+    throw new Error(MESSAGES.CANNOT_EDIT_DELETED);
+  }
   if (updateData.user_password) delete updateData.user_password;
-  const updated = await userRepo.update(id, updateData);
-  if (!updated) throw new Error(MESSAGES.USER_NOT_FOUND);
+  await userRepo.update(id, updateData);
   return await userRepo.findById(id);
 };
 
@@ -88,6 +100,16 @@ const deleteUser = async (id) => {
   }
 
   return true;
+};
+
+const restoreUser = async (id) => {
+  const user = await userRepo.findById(id);
+  if (!user) throw new Error(MESSAGES.USER_NOT_FOUND);
+  if (user.user_status !== USER_STATUS.DELETED) {
+    throw new Error(MESSAGES.NOT_DELETED_CANNOT_RESTORE);
+  }
+  await userRepo.restore(id);
+  return await userRepo.findById(id);
 };
 
 const updatePassword = async (id, oldPassword, newPassword) => {
@@ -107,5 +129,6 @@ module.exports = {
   getUserById,
   updateUser,
   deleteUser,
+  restoreUser,
   updatePassword
 };
