@@ -56,12 +56,24 @@ Para mantermos o histórico limpo e rastreável, este projeto utiliza a especifi
 
 | Método | Endpoint                          | Descrição                          | Auth | Body |
 |--------|----------------------------------|------------------------------------|------|------|
-| GET    | `/users/listUsers`               | Lista usuários (com paginação)      | ✅   | — |
+| GET    | `/users/listUsers`               | Lista usuários (paginado, ADMIN). Default: ACTIVE+INACTIVE. Use `?includeDeleted=true` para incluir DELETED ou `?status=N` para filtro fino. | ✅   | — |
 | GET    | `/users/listUserById/{id}`       | Busca usuário por ID                | ✅   | — |
 | POST   | `/users/createUser`              | Cria novo usuário                  | ✅   | email, password, status, role, teacher_name?, teacher_cpf? |
-| PUT    | `/users/updateUserById/{id}`     | Atualiza usuário                   | ✅   | email, status |
-| DELETE | `/users/deleteUserById/{id}`     | Deleta usuário (lógico)            | ✅   | — |
+| PUT    | `/users/updateUserById/{id}`     | Atualiza usuário (bloqueado se status=DELETED) | ✅   | email, status |
+| DELETE | `/users/deleteUserById/{id}`     | Deleta usuário (lógico, status=2)  | ✅   | — |
+| POST   | `/users/restoreUserById/{id}`    | Restaura usuário deletado (status: 2 → 1) | ✅   | — |
 | POST   | `/users/changePassword`          | Altera senha do usuário            | ✅   | oldPassword, newPassword |
+
+### Ciclo de vida do usuário (status)
+
+- `ACTIVE (1)`: registro operacional normal.
+- `INACTIVE (0)`: pausado/suspenso. Reversível via `PUT /updateUserById/{id}`.
+- `DELETED (2)`: vínculo encerrado. Não pode ser editado via `PUT`. Reativação **apenas** via `POST /restoreUserById/{id}` (ADMIN), garantindo decisão consciente e auditável.
+
+### Filtragem por papel nos endpoints `/list*`
+
+- **ADMIN** (default): retorna ACTIVE + INACTIVE; passar `?includeDeleted=true` para incluir DELETED, ou `?status=N` para filtro específico.
+- **TEACHER**: força ACTIVE; query string de status/includeDeleted é ignorada.
 
 ---
 

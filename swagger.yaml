@@ -256,7 +256,17 @@ paths:
           schema:
             type: integer
             enum: [0, 1, 2]
-          description: Filtro por status do usuário
+          description: |
+            Filtro fino por status. Quando informado, sobrepõe o default.
+            Sem este parâmetro, ADMIN recebe apenas registros ACTIVE+INACTIVE (deletados ocultos).
+        - name: includeDeleted
+          in: query
+          schema:
+            type: boolean
+            default: false
+          description: |
+            Quando `true`, inclui usuários com status DELETED (2) na listagem. Padrão `false`.
+            Ignorado quando `status` é informado explicitamente.
         - name: email
           in: query
           schema:
@@ -373,6 +383,14 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/User'
+        '400':
+          description: |
+            Registro está deletado (status=2). Não é possível editar registros deletados.
+            Use `POST /users/restoreUserById/{id}` para reativar.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
         '404':
           description: Usuário não encontrado
         '403':
@@ -409,6 +427,49 @@ paths:
           description: Usuário não encontrado
         '403':
           description: Acesso negado
+
+  /users/restoreUserById/{id}:
+    post:
+      summary: Restaura um usuário deletado (apenas ADMIN)
+      description: |
+        Promove o status do usuário de DELETED (2) para ACTIVE (1). Endpoint dedicado
+        para reativação consciente de registros deletados — separa a intenção
+        "editar dados" de "ressuscitar registro" e impede reativação acidental via update.
+      tags:
+        - Users
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Usuário restaurado com sucesso
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Usuário restaurado com sucesso"
+                  user:
+                    $ref: '#/components/schemas/User'
+        '400':
+          description: Usuário não está deletado (nada a restaurar)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Token não fornecido ou inválido
+        '403':
+          description: Acesso negado (requer papel ADMIN)
+        '404':
+          description: Usuário não encontrado
 
   /users/changePassword:
     post:
