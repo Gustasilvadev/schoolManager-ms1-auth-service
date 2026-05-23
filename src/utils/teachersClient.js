@@ -88,4 +88,25 @@ const findTeacherIdByUserId = async (userId) => {
   return data?.teacher_id ?? null;
 };
 
-module.exports = { findTeacherByCpf, findTeacherByEmail, findTeacherIdByUserId };
+/**
+ * Busca os dados completos do professor autenticado via GET /teachers/me.
+ */
+const findMyTeacher = async (authToken) => {
+  const url = buildUrl('/teachers/me');
+  let response;
+  try {
+    response = await fetchWithTimeout(url, authToken);
+  } catch (err) {
+    console.error(`[MS1->${SERVICE_NAME}] Falha ao consultar /me:`, err.message);
+    throw new Error(MESSAGES.EXTERNAL_SERVICE_UNAVAILABLE);
+  }
+
+  if (response.status === 404) return null;
+  if (!response.ok) {
+    console.error(`[MS1->${SERVICE_NAME}] /me retornou HTTP ${response.status}`);
+    throw new Error(MESSAGES.EXTERNAL_SERVICE_UNAVAILABLE);
+  }
+  return await response.json();
+};
+
+module.exports = { findTeacherByCpf, findTeacherByEmail, findTeacherIdByUserId, findMyTeacher };

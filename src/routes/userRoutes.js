@@ -10,6 +10,7 @@ router.use(authMiddleware);
 const ADMIN_ONLY = roleMiddleware(['ADMIN']);
 const ADMIN_OR_TEACHER = roleMiddleware(['ADMIN', 'TEACHER']);
 
+router.get('/me', ADMIN_OR_TEACHER, userController.getMe);
 router.post('/changePassword', ADMIN_OR_TEACHER, validateChangePassword, userController.changePassword);
 
 router.get('/listUsers', ADMIN_ONLY, userController.getAllUsers);

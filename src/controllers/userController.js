@@ -1,6 +1,24 @@
 const userService = require('../services/userService');
 const { HTTP_STATUS, MESSAGES, USER_STATUS } = require('../utils/constants');
 const { formatUserResponse } = require('../utils/userFormatter');
+const { findMyTeacher } = require('../utils/teachersClient');
+
+const getMe = async (req, res, next) => {
+  try {
+    const user = await userService.getUserById(req.user.id);
+    const userFormatted = formatUserResponse(user);
+
+    const teacher = await findMyTeacher(req.headers.authorization);
+
+    return res.status(HTTP_STATUS.OK).json({ ...userFormatted, teacher: teacher ?? null });
+  } catch (error) {
+    if (error.message === MESSAGES.USER_NOT_FOUND) {
+      return res.status(HTTP_STATUS.NOT_FOUND).json({ error: error.message });
+    }
+    next(error);
+  }
+};
+
 const getAllUsers = async (req, res, next) => {
   try {
     const { page = 1, limit = 10, status, email, includeDeleted } = req.query;
@@ -126,6 +144,7 @@ const changePassword = async (req, res, next) => {
 };
 
 module.exports = {
+  getMe,
   getAllUsers,
   getUserById,
   createUser,
