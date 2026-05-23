@@ -19,6 +19,11 @@ const login = async (req, res, next) => {
 };
 
 
+const logout = async (req, res) => {
+  return res.status(HTTP_STATUS.OK).json({ message: 'Logout realizado com sucesso' });
+};
+
+
 const verify = async (req, res, next) => {
   try {
     const authHeader = req.headers.authorization;
@@ -36,7 +41,8 @@ const verify = async (req, res, next) => {
   }
 };
 
-module.exports = { 
-    login, 
-    verify 
+module.exports = {
+    login,
+    logout,
+    verify
 };
