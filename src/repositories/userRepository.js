@@ -48,6 +48,7 @@ const update = async (id, data) => {
   if (data.user_email !== undefined) updateData.user_email = data.user_email;
   if (data.user_password !== undefined) updateData.user_password = data.user_password;
   if (data.user_status !== undefined) updateData.user_status = data.user_status;
+  if (data.user_photo !== undefined) updateData.user_photo = data.user_photo;
   return await prisma.users.update({
     where: { user_id: id },
     data: updateData

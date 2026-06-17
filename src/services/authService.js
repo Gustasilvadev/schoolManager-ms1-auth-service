@@ -34,7 +34,8 @@ const login = async (email, password) => {
       user_email: user.user_email,
       role: roleName,
       teacher_id: payload.teacher_id,
-      user_status: user.user_status
+      user_status: user.user_status,
+      user_photo: user.user_photo
     },
     token
   };

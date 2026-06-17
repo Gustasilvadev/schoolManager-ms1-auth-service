@@ -129,6 +129,37 @@ const deleteUser = async (req, res, next) => {
   }
 };
 
+/**
+ * Lógica compartilhada de upload: o middleware handlePhotoUpload já garantiu req.file.
+ */
+const handleUserPhotoUpload = async (req, res, next, userId) => {
+  try {
+    const updated = await userService.uploadUserPhoto(userId, req.file.buffer);
+    return res.status(HTTP_STATUS.OK).json(formatUserResponse(updated));
+  } catch (error) {
+    if (error.message === MESSAGES.USER_NOT_FOUND) {
+      return res.status(HTTP_STATUS.NOT_FOUND).json({ error: error.message });
+    }
+    if (error.message === MESSAGES.CANNOT_EDIT_DELETED) {
+      return res.status(HTTP_STATUS.BAD_REQUEST).json({ error: error.message });
+    }
+    if (error.message === MESSAGES.EXTERNAL_SERVICE_UNAVAILABLE) {
+      return res.status(HTTP_STATUS.SERVICE_UNAVAILABLE).json({ error: error.message });
+    }
+    next(error);
+  }
+};
+
+// Usuário autenticado troca a própria foto (id vem do token).
+const uploadMyPhoto = async (req, res, next) => {
+  return handleUserPhotoUpload(req, res, next, req.user.id);
+};
+
+// ADMIN troca a foto de qualquer usuário (id vem da rota).
+const uploadUserPhoto = async (req, res, next) => {
+  return handleUserPhotoUpload(req, res, next, parseInt(req.params.id));
+};
+
 const changePassword = async (req, res, next) => {
   try {
     const userId = req.user.id;
@@ -151,5 +182,7 @@ module.exports = {
   updateUser,
   deleteUser,
   restoreUser,
-  changePassword
+  changePassword,
+  uploadMyPhoto,
+  uploadUserPhoto
 };

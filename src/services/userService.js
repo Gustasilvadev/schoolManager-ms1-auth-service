@@ -6,6 +6,9 @@ const { hashPassword, comparePassword } = require('../utils/passwordHelper');
 const { MESSAGES, ROLES, USER_STATUS, HTTP_STATUS } = require('../utils/constants');
 const { emitUserCreated, emitUserDeleted } = require('../events/publishers/userPublisher');
 const { findTeacherByCpf, findTeacherByEmail } = require('../utils/teachersClient');
+const { uploadImageBuffer } = require('../utils/cloudinaryHelper');
+
+const CLOUDINARY_USERS_FOLDER = 'schoolmanager/users';
 
 const createUser = async (userData, roleName = ROLES.TEACHER, authToken = null) => {
   const existing = await userRepo.findByEmail(userData.user_email);
@@ -112,6 +115,33 @@ const restoreUser = async (id) => {
   return await userRepo.findById(id);
 };
 
+/**
+ * Faz upload da foto de perfil do usuário para o Cloudinary e persiste a URL.
+ * O upload externo acontece ANTES da escrita no banco: se o Cloudinary falhar,
+ * nada é gravado (a "transação lógica" falha) e o erro vira 503 no controller.
+ */
+const uploadUserPhoto = async (id, fileBuffer) => {
+  const user = await userRepo.findById(id);
+  if (!user) throw new Error(MESSAGES.USER_NOT_FOUND);
+  if (user.user_status === USER_STATUS.DELETED) {
+    throw new Error(MESSAGES.CANNOT_EDIT_DELETED);
+  }
+
+  let result;
+  try {
+    result = await uploadImageBuffer(fileBuffer, {
+      folder: CLOUDINARY_USERS_FOLDER,
+      publicId: id
+    });
+  } catch (err) {
+    console.error('[MS1] Falha no upload ao Cloudinary:', err.message);
+    throw new Error(MESSAGES.EXTERNAL_SERVICE_UNAVAILABLE);
+  }
+
+  await userRepo.update(id, { user_photo: result.secure_url });
+  return await userRepo.findById(id);
+};
+
 const updatePassword = async (id, oldPassword, newPassword) => {
   const user = await userRepo.findById(id);
   if (!user) throw new Error(MESSAGES.USER_NOT_FOUND);
@@ -130,5 +160,6 @@ module.exports = {
   updateUser,
   deleteUser,
   restoreUser,
-  updatePassword
+  updatePassword,
+  uploadUserPhoto
 };

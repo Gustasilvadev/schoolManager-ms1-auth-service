@@ -29,5 +29,6 @@ model users {
   user_email    String       @unique(map: "user_email_UNIQUE") @db.VarChar(45)
   user_password String       @db.VarChar(255)
   user_status   Int
+  user_photo    String?      @default("https://res.cloudinary.com/dqbockewb/image/upload/v1781657485/samples/man-portrait.jpg") @db.VarChar(255)
   role_users    role_users[]
 }

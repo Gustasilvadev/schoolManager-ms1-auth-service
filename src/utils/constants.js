@@ -15,6 +15,7 @@ module.exports = {
     UNAUTHORIZED: 401,
     FORBIDDEN: 403,
     NOT_FOUND: 404,
+    PAYLOAD_TOO_LARGE: 413,
     INTERNAL_SERVER_ERROR: 500,
     SERVICE_UNAVAILABLE: 503
   },
@@ -30,6 +31,10 @@ module.exports = {
     EXTERNAL_SERVICE_UNAVAILABLE: 'Serviço externo indisponível',
     CANNOT_EDIT_DELETED: 'Não é possível editar um usuário excluído',
     NOT_DELETED_CANNOT_RESTORE: 'O registro não está excluído',
-    USER_RESTORED: 'Usuário restaurado com sucesso'
+    USER_RESTORED: 'Usuário restaurado com sucesso',
+    NO_FILE_PROVIDED: 'Nenhum arquivo de imagem foi enviado',
+    INVALID_FILE_TYPE: 'Formato de imagem inválido. Aceitos: JPEG, JPG, PNG e WEBP',
+    FILE_TOO_LARGE: 'A imagem excede o tamanho máximo permitido de 5 MB',
+    UPLOAD_ERROR: 'Falha ao processar o upload da imagem'
   }
 };
