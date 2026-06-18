@@ -44,6 +44,12 @@ components:
           nullable: true
           description: "Papel do usuário (nome do role). Null se não houver papel atribuído."
           example: "ADMIN"
+        user_photo:
+          type: string
+          format: uri
+          nullable: true
+          description: "URL pública da foto de perfil (hospedada no Cloudinary). Valor default (avatar padrão) definido no banco. Retornada também no payload de login."
+          example: "https://res.cloudinary.com/<cloud>/image/upload/v1/schoolmanager/users/1.jpg"
       required:
         - user_id
         - user_email
@@ -571,3 +577,121 @@ paths:
           description: Senha atual inválida
         '404':
           description: Usuário não encontrado
+
+  /users/uploadPhoto:
+    post:
+      summary: Faz upload da própria foto de perfil (ADMIN ou TEACHER)
+      description: |
+        Recebe uma imagem via `multipart/form-data` (campo **`photo`**), envia ao
+        Cloudinary diretamente da memória (sem gravar em disco) e persiste a URL
+        pública em `user_photo`. O usuário-alvo é o dono do token.
+
+        Regras: limite **5 MB**; formatos aceitos **jpeg, jpg, png, webp**.
+        O upload externo ocorre antes da escrita no banco — se o Cloudinary falhar,
+        nada é gravado (503).
+      tags:
+        - Users
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required:
+                - photo
+              properties:
+                photo:
+                  type: string
+                  format: binary
+                  description: "Arquivo de imagem (jpeg/jpg/png/webp, máx. 5 MB)"
+      responses:
+        '200':
+          description: Foto atualizada; retorna o usuário com a nova `user_photo`
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '400':
+          description: Arquivo ausente, formato inválido, ou usuário inativo (status=2)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Token não fornecido ou inválido
+        '413':
+          description: Arquivo excede o limite de 5 MB
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '503':
+          description: Falha ao enviar a imagem ao Cloudinary (serviço externo indisponível)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /users/uploadPhotoById/{id}:
+    post:
+      summary: Faz upload da foto de perfil de qualquer usuário (apenas ADMIN)
+      description: |
+        Igual a `/users/uploadPhoto`, mas o ADMIN informa o `id` do usuário-alvo na rota.
+        Mesmas regras de validação (5 MB; jpeg/jpg/png/webp) e mesmo contrato de erro.
+      tags:
+        - Users
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: ID do usuário-alvo
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required:
+                - photo
+              properties:
+                photo:
+                  type: string
+                  format: binary
+                  description: "Arquivo de imagem (jpeg/jpg/png/webp, máx. 5 MB)"
+      responses:
+        '200':
+          description: Foto atualizada; retorna o usuário com a nova `user_photo`
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '400':
+          description: Arquivo ausente, formato inválido, ou usuário inativo (status=2)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Token não fornecido ou inválido
+        '403':
+          description: Acesso negado (requer papel ADMIN)
+        '404':
+          description: Usuário não encontrado
+        '413':
+          description: Arquivo excede o limite de 5 MB
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '503':
+          description: Falha ao enviar a imagem ao Cloudinary (serviço externo indisponível)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'

@@ -63,6 +63,8 @@ Para mantermos o histórico limpo e rastreável, este projeto utiliza a especifi
 | DELETE | `/users/deleteUserById/{id}`     | Deleta usuário (lógico, status=2)  | ✅   | — |
 | POST   | `/users/restoreUserById/{id}`    | Restaura usuário deletado (status: 2 → 1) | ✅   | — |
 | POST   | `/users/changePassword`          | Altera senha do usuário            | ✅   | oldPassword, newPassword |
+| POST   | `/users/uploadPhoto`             | Upload da **própria** foto de perfil (ADMIN ou TEACHER) | ✅   | `photo` (file, multipart) |
+| POST   | `/users/uploadPhotoById/{id}`    | ADMIN faz upload da foto de qualquer usuário | ✅   | `photo` (file, multipart) |
 
 ### Ciclo de vida do usuário (status)
 
@@ -74,6 +76,13 @@ Para mantermos o histórico limpo e rastreável, este projeto utiliza a especifi
 
 - **ADMIN** (default): retorna ACTIVE + INACTIVE; passar `?includeDeleted=true` para incluir DELETED, ou `?status=N` para filtro específico.
 - **TEACHER**: força ACTIVE; query string de status/includeDeleted é ignorada.
+
+### Foto de perfil (`user_photo`)
+
+- O campo `user_photo` (URL pública hospedada no **Cloudinary**) é retornado no objeto `user` — inclusive **no payload do login** — e nas listagens. Possui avatar padrão (DEFAULT) no banco.
+- Upload via `multipart/form-data`, campo **`photo`**. Limite **5 MB**; formatos **jpeg, jpg, png, webp**. A imagem vai ao Cloudinary direto da memória (sem disco) e a `secure_url` é persistida.
+- `/uploadPhoto` usa o id do token (cada um troca a própria foto). `/uploadPhotoById/{id}` é exclusivo de **ADMIN**.
+- Erros: `413` (arquivo > 5 MB), `400` (formato inválido / sem arquivo / usuário inativo status=2), `503` (Cloudinary indisponível — nada é gravado).
 
 ---
 
